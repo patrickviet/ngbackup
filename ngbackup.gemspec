@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'json',    '>= 1.7.7'
   s.add_runtime_dependency 'eventmachine', '>= 1.0.7'
+  s.add_runtime_dependency 'em_pessimistic', '>= 0.2.0'
   s.add_runtime_dependency 'pry'
 
 #  s.add_development_dependency 'pry'

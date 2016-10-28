@@ -1,7 +1,14 @@
+require 'promise'
 require 'eventmachine'
 require 'pry'
 
 module NGBackup
+  class Prom < promise
+    def defer
+      EM.next_tick { yield }
+    end
+  end
+
   class Backup
     def initialize
       # We need a few params
@@ -15,10 +22,19 @@ module NGBackup
 
       @basename = 'blah'
       @stamp = Time.new
-      @pre_exec = File.expand_path('examples/exec_scripts/pre_exec.sh')
-      @pipe_exec = File.expand_path('examples/exec_scripts/pipe_exec.sh')
-      @success_exec = File.expand_path('examples/exec_scripts/success_exec.sh')
-      @failure_exec = File.expand_path('examples/exec_scripts/failure_exec.sh')
+
+      @scripts = {}
+
+      %w[
+        pre_exec
+        pipe_exec_stdout
+        upload_exec
+        post_exec_failure
+        post_exec_success
+        post_exec_always
+      ].each do |section|
+        @scripts[section] = File.expand_path("examples/exec_scripts/#{section}.sh")
+      end
 
       @fullname = "backup_#{@hostname}_#{@basename}_#{@stamp.strftime('%Y%m%d_%H%M')}"
       @file_ext = "tar.gz"
@@ -74,7 +90,15 @@ module NGBackup
     end
   end
 
-  module PipeRead
+  module PipeReadAndSplit
+    # This just sets internal variables from key/value
+    def initialize(**params)
+      params.each do |k,v|
+        k = "@#{k.to_s}".to_sym if k.to_s[0] != '@'
+        instance_variable_set(k,v)
+      end
+    end
+
     def receive_data(data)
       puts "Got data: #{data}"
     end
